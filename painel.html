@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <title>Portal de Testes de Perfil</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700&display=swap" rel="stylesheet" />
+  <!-- Link para o CSS externo refinado -->
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    /* Caso queira um estilo específico para a área de botões quando estiver oculta */
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-wrapper">
+    <!-- Cabeçalho -->
+    <header>
+      <h2>Portal de Testes de Perfil v2</h2>
+    </header>
+    
+    <!-- Container principal (cartão) -->
+    <div class="container">
+      <h1>Bem-vindo(a) ao Portal de Testes</h1>
+      <p>Por favor, insira seu nome e último sobrenome:</p>
+      <input
+        type="text"
+        id="userName"
+        class="input-field"
+        placeholder="SEU NOME (EX.: IVO DIAS)"
+        required
+      />
+      <p>Por favor, insira seu email:</p>
+      <input
+        type="email"
+        id="userEmail"
+        class="input-field"
+        placeholder="seu email (ex.: fulano@teste.com)"
+        required
+      />
+      <!-- Botão para consultar o banco -->
+      <button id="consultBtn" class="btn" onclick="consultarBanco()">Consultar Registros</button>
+      
+      <!-- Grid de botões dos testes – oculto inicialmente -->
+      <div id="gridButtons" class="grid-container hidden">
+        <button id="cerebroTrinoBtn" class="btn" onclick="iniciarTeste('cerebro-trino.html', 'cerebroTrinoDone')">9CERTRIO1</button>
+        <button id="canaisComBtn" class="btn" onclick="iniciarTeste('canaiscom.html', 'canaisComDone')">8CANCOM2</button>
+        <button id="comphabBtn" class="btn" onclick="iniciarTeste('comphab.html', 'comphabDone')">7COMPHA03</button>
+        <button id="autoestBtn" class="btn" onclick="iniciarTeste('autoestima.html', 'autoestDone')">6ESTAUT4</button>
+        <button id="proatvBtn" class="btn" onclick="iniciarTeste('proatv.html', 'proatDone')">5ATVPRE005</button>
+        <button id="qeBtn" class="btn" onclick="iniciarTeste('qe.html', 'qeTestDone')">4QEMO002</button>
+        <button id="sabotadoresBtn" class="btn" onclick="iniciarTeste('sab2.html', 'sabTestDone')">3SABCOM7</button>
+        <button id="discBtn" class="btn" onclick="iniciarTeste('disc.html', 'discTestDone')">2PERDSK08</button>
+        <button id="vecaBtn" class="btn" onclick="iniciarTeste('veca.html', 'vecaTestDone')">1VECA0009</button>
+      </div>
+    </div>
+    
+    <!-- Rodapé -->
+    <footer>
+      © 2025 - Portal de Testes de Perfil
+    </footer>
+  </div> <!-- /page-wrapper -->
+
+  <script>
+    // Função para validar email
+    function validateEmail(email) {
+      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return re.test(email.toLowerCase());
+    }
+
+    // Função para iniciar o teste: redireciona para a página do teste com os parâmetros
+    function iniciarTeste(urlPage, storageKey) {
+      const nameInput = document.getElementById("userName").value.trim();
+      const emailInput = document.getElementById("userEmail").value.trim().toLowerCase();
+      if (nameInput.length < 8 || !nameInput.includes(" ")) {
+        alert("Por favor, insira seu nome e último sobrenome (mínimo 8 caracteres).");
+        return;
+      }
+      if (!validateEmail(emailInput)) {
+        alert("Por favor, insira um email válido.");
+        return;
+      }
+      const url = `${urlPage}?name=${encodeURIComponent(nameInput)}&email=${encodeURIComponent(emailInput)}`;
+      window.location.href = url;
+    }
+
+    // Função para consultar o banco e mostrar os botões dos testes
+    async function consultarBanco() {
+      const email = document.getElementById("userEmail").value.trim().toLowerCase();
+      if (!validateEmail(email)) {
+        alert("Informe um email válido antes de consultar o banco.");
+        return;
+      }
+      
+      try {
+        // Chama a sua Netlify Function que consulta os registros no Supabase
+        const resp = await fetch(`/.netlify/functions/getSupabaseRecords?email=${encodeURIComponent(email)}`);
+        const data = await resp.json();
+        console.log("Retorno do banco:", data);
+        if (data.error) {
+          alert("Erro ao consultar o banco: " + data.error);
+          return;
+        }
+        // Cria um objeto para mapear os testes encontrados
+        const testsFound = {};
+        data.forEach(row => {
+          testsFound[row.Teste] = true;
+        });
+
+        // Lista dos botões com seus IDs e respectivos códigos de teste
+        const buttons = [
+          { id: "cerebroTrinoBtn", test: "9CERTRIO1" },
+          { id: "canaisComBtn", test: "8CANCOM2" },
+          { id: "comphabBtn", test: "7COMPHA03" },
+          { id: "autoestBtn", test: "6ESTAUT4" },
+          { id: "proatvBtn", test: "5ATVPRE005" },
+          { id: "qeBtn", test: "4QEMO002" },
+          { id: "sabotadoresBtn", test: "3SABCOM7" },
+          { id: "discBtn", test: "2PERDSK08" },
+          { id: "vecaBtn", test: "1VECA0009" },
+        ];
+
+        // Atualiza cada botão: se o teste foi encontrado, exibe o texto com marcação e muda cor para vermelho; se não, para azul.
+        buttons.forEach(item => {
+          const btn = document.getElementById(item.id);
+          if (testsFound[item.test]) {
+            btn.textContent = `${item.test} ✔ (BD)`;
+            btn.style.backgroundColor = "red";
+          } else {
+            btn.textContent = item.test;
+            btn.style.backgroundColor = "blue";
+          }
+        });
+		
+	
+		
+
+        // Exibe os botões (remove a classe 'hidden' do container)
+        document.getElementById("gridButtons").classList.remove("hidden");
+
+      } catch (err) {
+        console.error("Erro no fetch da function getSupabaseRecords:", err);
+        alert("Não foi possível consultar o banco. Tente novamente mais tarde.");
+      }
+    }
+
+    // Ao carregar a página, você pode opcionalmente chamar a consulta (ou deixar que o usuário clique no botão "Consultar")
+    // window.onload = () => { consultarBanco(); };
+
+  </script>
+</body>
+</html>
